@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>No More Lies | TryHackMe Write-Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="No More Lies - A Digital Forensics TryHackMe Room Write-Up covering disk analysis, hash cracking, OSINT, and PDF recovery.">
+    
+    <link rel="stylesheet" href="nomorelies.css">
+</head>
+
+<body>
+
+<!-- ================= NAVIGATION (NOT INCLUDED IN PDF) ================= -->
+<header>
+    <nav>
+        <div class="logo">
+            <h2>No More Lies</h2>
+        </div>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#tools">Tools</a></li>
+            <li><a href="#investigation">Investigation</a></li>
+            <li><a href="#answers">Answers</a></li>
+            <li><a href="#download">Download</a></li>
+        </ul>
+    </nav>
+</header>
+
+
+<!-- ================= PDF CONTENT START ================= -->
+<div id="pdf-content">
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>No More Lies</h1>
+            <p>A Medium-Level Digital Forensics Challenge</p>
+            <p>Disk Analysis • Hash Cracking • OSINT • Metadata Investigation</p>
+        </div>
+    </section>
+
+    <!-- OVERVIEW -->
+    <section id="overview">
+        <h2>Case Overview</h2>
+        <p>
+            A mysterious case lands on your desk. During the initial crime-scene sweep,
+            investigators discovered a pen drive inside the victim’s pocket —
+            the only lead in an otherwise silent room.
+        </p>
+
+        <p>
+            You are provided with a forensic disk image (E01) of the pen drive.
+            Your mission is to analyze the evidence, recover deleted artifacts,
+            crack hidden secrets, and uncover the truth.
+        </p>
+
+        <h3>Skills Tested</h3>
+        <ul>
+            <li>Forensic Disk Image Analysis</li>
+            <li>Deleted File Recovery</li>
+            <li>Hash Identification & Cracking (bcrypt)</li>
+            <li>PDF Password Cracking</li>
+            <li>Image Metadata & GPS OSINT</li>
+        </ul>
+    </section>
+
+    <!-- TOOLS -->
+    <section id="tools">
+        <h2>Tools Used During Investigation</h2>
+        <div class="tool-list">
+            <div class="tool-item">
+                <h3>Autopsy</h3>
+                <p>Forensic analysis of the E01 disk image and recovery of deleted files.</p>
+            </div>
+            <div class="tool-item">
+                <h3>Hashcat</h3>
+                <p>Used for hash analysis and cracking validation.</p>
+            </div>
+            <div class="tool-item">
+                <h3>John the Ripper</h3>
+                <p>Used to crack bcrypt and extract PDF password hashes.</p>
+            </div>
+            <div class="tool-item">
+                <h3>ExifTool</h3>
+                <p>Extracted metadata including GPS coordinates from images.</p>
+            </div>
+            <div class="tool-item">
+                <h3>Google Maps</h3>
+                <p>Identified real-world location using recovered GPS metadata.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- INVESTIGATION -->
+    <section id="investigation">
+        <h2>Digital Investigation Walkthrough</h2>
+
+        <!-- STEP 1 -->
+        <div class="step">
+            <h3>Step 1 — Loading the Disk Image</h3>
+            <p>The E01 forensic image was loaded into Autopsy and indexed for analysis.</p>
+            <div class="screenshot">
+                <img src="assets/images/autopsy-loading.png" alt="Autopsy loading disk image">
+            </div>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="step">
+            <h3>Step 2 — Recovering the Deleted Diary</h3>
+            <p>The deleted file <strong>Field Diary — 0314 AM.txt</strong> was recovered.</p>
+
+            <pre>
+$2y$05$0IBOJoTrWfWCNS0svUG8ee5lEsHRx5tlqOYhC6VwURogR.Xg8p0QO
+            </pre>
+
+            <p>Hint discovered: <em>Five lowercase letters. A name disguised as a seal.</em></p>
+
+            <div class="screenshot">
+                <img src="assets/images/deleted-diary.png" alt="Recovered diary file">
+            </div>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="step">
+            <h3>Step 3 — Smart Cracking the Handler's Message</h3>
+
+            <h4>1. Save Hash</h4>
+            <pre>
+echo '$2y$05$0IBOJoTrWfWCNS0svUG8ee5lEsHRx5tlqOYhC6VwURogR.Xg8p0QO' > code.hash
+            </pre>
+
+            <h4>2. Filter Wordlist</h4>
+            <pre>
+grep -E '^[a-z]{5}$' /usr/share/wordlists/rockyou.txt > filter.txt
+            </pre>
+
+            <h4>3. Crack Using John</h4>
+            <pre>
+john --wordlist=filter.txt code.hash
+john --show code.hash
+            </pre>
+
+
+            <p>Handler's message revealed during investigation.</p>
+
+            <div class="screenshot">
+                <img src="assets/images/john-crack.png" alt="John cracking bcrypt hash">
+            </div>
+        </div>
+
+        <!-- STEP 4 -->
+        <div class="step">
+            <h3>Step 4 — Recovering the Locked PDF</h3>
+
+            <pre>
+pdf2john recovered.pdf > pdf_hash.txt
+john pdf_hash.txt --wordlist=rockyou.txt
+            </pre>
+
+            <p>Recovered fallback trigger phrase from decrypted document.</p>
+
+            <div class="screenshot">
+                <img src="assets/images/pdf-cracked.png" alt="PDF password cracked">
+            </div>
+        </div>
+
+        <!-- STEP 5 -->
+        <div class="step">
+            <h3>Step 5 — GPS Metadata Analysis</h3>
+
+            <pre>
+exiftool image.jpg
+            </pre>
+
+            <pre>
+51°28'36.84"N 0°0'1.80"W
+            </pre>
+
+            <div class="screenshot">
+                <img src="assets/images/google-maps-location.png" alt="Google Maps location">
+            </div>
+        </div>
+
+    </section>
+
+    <!-- ANSWERS -->
+    <section id="answers">
+        <h2>Final Answers</h2>
+
+        <div class="answer-box">
+            <p><strong>Handler's Last Message:</strong> ceral</p>
+        </div>
+
+        <div class="answer-box">
+            <p><strong>Recovered PDF Flag:</strong> THM{NIGHT_FALL}</p>
+        </div>
+
+        <div class="answer-box">
+            <p><strong>Meeting Location:</strong> Royal Observatory Greenwich</p>
+        </div>
+    </section>
+
+</div>
+<!-- ================= PDF CONTENT END ================= -->
+
+
+<!-- DOWNLOAD SECTION -->
+<section id="download">
+    <h2>Download Full PDF Write-Up</h2>
+    <p>Generate and download the complete report as a PDF.</p>
+    <button class="download-btn" id="downloadPDF">
+        Download PDF
+    </button>
+</section>
+
+
+<footer>
+    <p>Created for TryHackMe | Digital Forensics Challenge</p>
+    <p>Room Author: ZOLKA</p>
+</footer>
+
+
+<!-- PDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script src="nomorelies.js"></script>
+
+</body>
+</html>
