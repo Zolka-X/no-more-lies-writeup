@@ -27,7 +27,7 @@ Your task was to analyze the provided forensic disk image (E01), recover deleted
 
 View the full interactive write-up here:
 
-👉 **https://YOURUSERNAME.github.io/no-more-lies-writeup/**
+👉 **https://Zolka-X.github.io/no-more-lies-writeup/**
 
 ---
 
